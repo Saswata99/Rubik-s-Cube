@@ -1,30 +1,35 @@
 import cv2
 import time
-from urllib.request import urlopen
+#from urllib.request import urlopen
+import requests
 import numpy as np
 
 
 class Camera:
     def __init__(self):
+        self.height = 720
+        self.width = 1080
+        self.middle = (self.width//2 + 100, self.height//2)
+
         # main cube(center) coordination
         self.main_cube_coordinates = [
-            [200, 120], [300, 120], [400, 120],
-            [200, 220], [300, 220], [400, 220],
-            [200, 320], [300, 320], [400, 320]
+            [self.middle[0] - 190, self.middle[1] - 190], [self.middle[0] - 50, self.middle[1] - 190], [self.middle[0] + 90, self.middle[1] - 190],
+            [self.middle[0] - 190, self.middle[1] - 50],  [self.middle[0] - 50, self.middle[1] - 50],  [self.middle[0] + 90, self.middle[1] - 50],
+            [self.middle[0] - 190, self.middle[1] + 90],  [self.middle[0] - 50, self.middle[1] + 90], [self.middle[0] + 90,  self.middle[1] + 90]
         ]
 
         # current cube(left-top) coordination
         self.current_cube_coordinates = [
-            [20, 20], [54, 20], [88, 20],
-            [20, 54], [54, 54], [88, 54],
-            [20, 88], [54, 88], [88, 88]
+            [50, 60], [94, 60], [138, 60],
+            [50, 104], [94, 104], [138, 104],
+            [50, 148], [94, 148], [138, 148]
         ]
 
         # preview cube(left-bottom) coordination
         self.preview_cube_coordinates = [
-            [20, 130], [54, 130], [88, 130],
-            [20, 164], [54, 164], [88, 164],
-            [20, 198], [54, 198], [88, 198]
+            [50, 260], [94, 260], [138, 260],
+            [50, 304], [94, 304], [138, 304],
+            [50, 348], [94, 348], [138, 348]
         ]
 
         # hsv value for colors
@@ -53,18 +58,19 @@ class Camera:
         :return: color name
         """
         h, s, v = hsv
-        if h < 15 and v < 100:
-            return 'red'
-        if h <= 10 and v > 100:
-            return 'orange'
-        elif h <= 30 and s <= 100:
+
+        if s < 70:
             return 'white'
-        elif h <= 40:
-            return 'yellow'
-        elif h <= 85:
-            return 'green'
-        elif h <= 130:
+        elif h > 118 or h < 4:
+            return 'red'
+        elif h > 75:
             return 'blue'
+        elif h > 35:
+            return 'green'
+        elif h > 16:
+            return 'yellow'
+        elif h > 3:
+            return 'orange'
 
         return 'white'
 
@@ -99,25 +105,27 @@ class Camera:
         :return: none
         """
         for x, y in self.main_cube_coordinates:
-            cv2.rectangle(frame, (x, y), (x + 30, y + 30), (255, 255, 255), 2)
+            cv2.rectangle(frame, (x, y), (x + 50, y + 50), (255, 255, 255), 2)
 
     def draw_current_cube(self, frame, state):
         """
         Draw current(left-top) cube
+        :param state: data of a side
         :param frame: VideoCapture window
         :return: none
         """
         for index, (x, y) in enumerate(self.current_cube_coordinates):
-            cv2.rectangle(frame, (x, y), (x + 32, y + 32), self.name_to_rgb(state[index]), -1)
+            cv2.rectangle(frame, (x, y), (x + 40, y + 40), self.name_to_rgb(state[index]), -1)
 
     def draw_preview_cube(self, frame, state):
         """
         Draw preview(left-bottom) cube
+        :param state: data of a side
         :param frame: VideoCapture window
         :return: none
         """
         for index, (x, y) in enumerate(self.preview_cube_coordinates):
-            cv2.rectangle(frame, (x, y), (x + 32, y + 32), self.name_to_rgb(state[index]), -1)
+            cv2.rectangle(frame, (x, y), (x + 40, y + 40), self.name_to_rgb(state[index]), -1)
 
     def color_to_notation(self, color):
         """
@@ -138,75 +146,91 @@ class Camera:
 
     def get_hsv(self):
         """
-
-        :return:
+        Calibrate colors' hsv value(Use only if color calibration is required)
+        You have to manually change hsv value in hsv_to_name function
+        :return: none
         """
 
-        #cam = cv2.VideoCapture(0)
-        url = "http://192.168.137.34:8080/shot.jpg?rnd=705060"
+        # cam = cv2.VideoCapture(0)
+        url = "http://192.168.137.88:8080/shot.jpg?rnd=422444"
 
         flag = False
         end_time = 0
         hsv = []
 
         while True:
-            #_, frame = cam.read()
-            #frame = cv2.flip(frame, 1)
+            # _, frame = cam.read()
+            # frame = cv2.flip(frame, 1)
 
-            with urlopen(url) as u:
-                imgResp = u.read()
-            imgNp = np.array(bytearray(imgResp), dtype=np.uint8)
-            frame = cv2.imdecode(imgNp, -1)
+            frame = ""
+            try:
+                response = requests.get(url)
+                imgNp = np.array(bytearray(response.content), dtype=np.uint8)
+                frame = cv2.imdecode(imgNp, -1)
+            except Exception as err:
+                print("URL connection don not established properly. Try again")
+                exit()
 
-            cv2.rectangle(frame, (200, 120), (430, 350), (255, 255, 255), 2)
+            frame = cv2.resize(frame, (self.width, self.height))
+
+            cv2.rectangle(frame, (200, 120), (300, 220), (255, 255, 255), 2)
             key = cv2.waitKey(10) & 0xff
 
             if key == 32:
                 if not flag:
-                    end_time = time.time() + 1.5    # scan time : 1.5 sec
+                    end_time = time.time() + 1    # scan time : 1 sec
                 flag = True
 
             if key == 27:
                 break
 
             if flag:
-                hsv.extend(cv2.cvtColor(frame, cv2.COLOR_BGR2HSV))
+                box = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)[120:220, 200:300]
+                hsv.extend(box)
                 if time.time() > end_time:
                     avg_hsv = self.average_hsv(hsv)
                     print(avg_hsv)
                     flag = False
-
+                    hsv.clear()
             cv2.imshow("Color Detection", frame)
 
-        #cam.release()
+        # cam.release()
         cv2.destroyAllWindows()
 
-    def define_color(self):
-        for i in range(10):
-            self.get_hsv()
 
     def scan(self):
         """
         Scan 6 sides of the cube by camera
         :return: list of notation value of all 6 sides
         """
-        cam = cv2.VideoCapture(0)
+        url = "http://192.168.137.88:8080/shot.jpg?rnd=422444"
+
+        # cam = cv2.VideoCapture(0)
+        # cam.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
+        # cam.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
+
         sides = {}
-        preview = [
-            'white', 'white', 'white',
-            'white', 'white', 'white',
-            'white', 'white', 'white'
-        ]
+        preview = ['white', 'white', 'white',
+                   'white', 'white', 'white',
+                   'white', 'white', 'white']
+        state = [0, 0, 0,
+                 0, 0, 0,
+                 0, 0, 0]
+        while True:
+            # _, frame = cam.read()
+            # frame = cv2.flip(frame, 1)
 
-        state = [
-            0, 0, 0,
-            0, 0, 0,
-            0, 0, 0
-        ]
+            frame = ""
+            try:
+                response = requests.get(url)
+                imgNp = np.array(bytearray(response.content), dtype=np.uint8)
+                frame = cv2.imdecode(imgNp, -1)
+            except Exception as err:
+                print("URL connection don not established properly. Try again")
+                exit()
 
-        while cam.isOpened():
-            _, frame = cam.read()
-            frame = cv2.flip(frame, 1)
+            frame = cv2.resize(frame, (self.width, self.height))
+
             hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
             key = cv2.waitKey(10) & 0xff
 
@@ -214,56 +238,44 @@ class Camera:
             self.draw_preview_cube(frame, preview)
 
             for index, (x, y) in enumerate(self.main_cube_coordinates):
-                box = hsv[y:y + 32, x:x + 32]
+                box = hsv[y:y + 50, x:x + 50]
                 avg_hsv = self.average_hsv(box)
                 color_name = self.hsv_to_name(avg_hsv)
                 state[index] = color_name
 
+            cv2.putText(frame, "Current Side : ", (30, 40), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
             self.draw_current_cube(frame, state)
+            cv2.putText(frame, "Last Scanned Side :", (30, 240), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
 
             if key == 32:  # Space bar
-                preview = list(state)
-                self.draw_preview_cube(frame, state)
                 face = self.color_to_notation(state[4])
                 notation = [self.color_to_notation(color) for color in state]
                 if face not in sides:
+                    preview = list(state)
                     sides[face] = notation
+                    print(f"Side with {face} center is successfully scanned.")
+                    print(f"Remaning faces : {6-len(sides)}")
                 else:
-                    print("You have done some mistake in scanning the sides. Try again")
-                    exit()
+                    print("Some mistake in scanning the side. Try again")
 
                 if len(sides) == 6:
                     break
 
             text = 'Scanned sides: {}/6'.format(len(sides))
-            cv2.putText(frame, text, (20, 460), cv2.FONT_HERSHEY_TRIPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+            cv2.putText(frame, text, (int(self.middle[0]*.7), int(self.middle[1]*1.8)), cv2.FONT_HERSHEY_DUPLEX, .9, (102,255,0), 1, cv2.LINE_AA)
 
             if key == 27:  # Esc
+                print("\nProgramme is terminated('Esc').")
                 break
-
             cv2.imshow("Rubik's Cube", frame)
 
-        cam.release()
+        # cam.release()
         cv2.destroyAllWindows()
         if len(sides) == 6:
             return sides
         else:
-            print("Sorry, you did not scan all 6 sides. Try again")
-            exit()
-
+            return False
 
 if __name__ == "__main__":
     camera = Camera()
     camera.get_hsv()
-""" (63, 156, 185)
-(65, 152, 166)
-(64, 164, 188)
-(97, 159, 212)
-
-
-(57, 202, 209)
-
-
-(52, 97, 160)
-
-"""
