@@ -44,11 +44,14 @@ class Cube:
         Run main program
         :return: none
         """
-        # camera = Camera()
-        # sides = camera.scan()
-        # unsolvedState = self.cubestring(sides)
+        camera = Camera()
+        sides = camera.scan()
+        if sides:
+            unsolvedState = self.cubestring(sides)
+        else:
+            exit()
 
-        unsolvedState = "DRLUUBFBRBLURRLRUBLRDDFDLFUFUFFDBRDUBRUFLLFDDBFLUBLRBD"
+        #unsolvedState = "DRLUUBFBRBLURRLRUBLRDDFDLFUFUFFDBRDUBRUFLLFDDBFLUBLRBD"
 
         algorithm = ""
         length = 0
@@ -57,7 +60,7 @@ class Cube:
             length = len(algorithm.split(' '))
 
         except Exception as err:
-            print("Sorry, you did not scan all the sides correctly. Please try again.")
+            print("\nSorry, Did not scan all the sides correctly. Please try again.")
             exit()
 
         print("\n-------  Rubik's Cube Solver   -------\n")
