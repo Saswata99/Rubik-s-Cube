@@ -15,7 +15,8 @@ To run:
 ```
 > python cube.py
 ```
-Step by step instruction is available in [run.txt](run.txt). 
+
+> Step by step instruction is available in [run.txt](run.txt). 
 
 Dependencies:
 
