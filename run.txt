@@ -1,0 +1,33 @@
+Rubik's Cube Solver 
+
+Important :  In this project color detection mechanism strongly depends on - 
+			1. environment lighting
+			2. cube's color code
+			3. image quality of the camera
+		    
+
+	    Solution :    If programme can’t detect the perfectly change the hsv range of the colors in hsv_to_name function(in colorDetection.py).
+	    		  You can also take help of get_hsv funtion(in colorDetection.py) to find right hsv value.
+
+
+
+Steps:
+
+1. Install the following libraries -
+	a. opencv-python
+	b. kociemba
+	c. requests 
+
+2. Download ip webcam in mobile
+3. Open it and connect pc and mobile in same network
+4. Click start server in it (last option)
+5. Open URL(visible in bottom) on your browser (URL like = "http://192.178.56.100:8080")
+6. Click JavaScript in 'video render' section in this site
+7. You can see video running, right click on it and click 'open image in new tab'
+8. New tab will be open, copy the URL and paste it URL variable in scan function (in colordetection.py file)
+9. Run the 'cube.py'
+10. Scan all six sides carefully. Don't rotate the cube z-axis(only x, y axis rotation allow). Sequence does not matter
+	spacebar : to scan side (hold cube Infront of the camera and click spacebar)
+	Esc : to terminate the programme
+
+11. If all steps are right solution will come. Follow the instructions -> solved cube :)
